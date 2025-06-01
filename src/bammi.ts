@@ -133,7 +133,9 @@ export class BammiBoardState {
 
         for (let index = 0; index < this.areas.length; index++) {
             const area = this.areas[index]
-            if (!player_index) player_index = area.owning_player
+            if (player_index === undefined) {
+                player_index = area.owning_player
+            }
 
             if (area.owning_player !== player_index) {
                 return undefined
@@ -152,6 +154,11 @@ export class BammiGame {
     }
 
     public submit_move(column: number, row: number, player: PlayerIndex): void {
+        if (this.board_state.get_win_state() !== undefined) {
+            console.log("We already have a winner, you can't play any more")
+            return
+        }
+
         const area = this.board_state.get_area(column, row)
         if (!area) {
             console.error("Area at column", column, "and row", row, "has no area to be found!")
@@ -163,22 +170,25 @@ export class BammiGame {
             return
         }
 
-        if (area.slice_count >= area.pie_size) {
-            // Explosion
-            // @todo
-            console.log("Explosion!")
-            area.slice_count = 1
-            const adjacent_areas = this.board_state.get_adjacent_areas(area)
+        let areas_to_add_to = [ area ]
 
-            adjacent_areas.forEach((adjacent_area) => {
-                adjacent_area.slice_count++
-                adjacent_area.owning_player = player
-            })
-        }
-        else {
-            // Just add one, claim if unclaimed
-            area.owning_player = player
-            area.slice_count++
+        while (areas_to_add_to.length > 0) {
+            const top_area = areas_to_add_to[0]
+            areas_to_add_to = areas_to_add_to.slice(1) // Remove the first element
+            top_area.owning_player = player
+
+            if (top_area.slice_count >= top_area.pie_size) {
+                // Explosion
+                areas_to_add_to.push(...this.board_state.get_adjacent_areas(top_area))
+            }
+            top_area.slice_count++
+
+            const winner = this.board_state.get_win_state()
+
+            if (winner !== undefined) {
+                console.log("We have a winner! Player with index", winner)
+                return
+            }
         }
     }
 }
