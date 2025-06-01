@@ -1,0 +1,30 @@
+{
+  "name": "web-base",
+  "version": "1.0.0",
+  "description": "Web base",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack --mode=production && npm run copy-assets",
+    "open": "start dist/index.html",
+    "publish": "echo \"Run SFTP: Sync Local -> Remote\" && exit 1",
+    "copy-assets": "node -e \"require('fs').cpSync('./src/assets', './dist/assets', {recursive: true});\""
+  },
+  "author": "Totalaj Krantz",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@stylistic/eslint-plugin": "^2.12.1",
+    "css-loader": "^7.1.2",
+    "globals": "^15.13.0",
+    "html-webpack-plugin": "^5.6.3",
+    "prettier": "^3.4.2",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^5.1.4"
+  }
+}
