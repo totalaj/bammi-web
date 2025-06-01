@@ -190,8 +190,10 @@ export class BammiGame {
 
             if (top_area.slice_count >= top_area.pie_size) {
                 // Explosion
+                top_area.slice_count = 0
                 areas_to_add_to.push(...this.board_state.get_adjacent_areas(top_area))
             }
+
             top_area.slice_count++
 
             const winner = this.board_state.get_win_state()
