@@ -35,10 +35,18 @@ function main(): void {
 
             element.cells.forEach((cell) => {
                 const cell_element = grid.appendChild(document.createElement('div'))
+                cells.push(cell_element)
                 cell_element.classList.add('game-cell')
                 cell_element.classList.add('player-' + element.owning_player.toFixed(0))
                 cell_element.style.gridColumn = (cell.column + 1).toFixed(0)
                 cell_element.style.gridRow = (cell.row + 1).toFixed(0)
+
+                cell_element.textContent = `${element.slice_count}/${element.pie_size}`
+
+                cell_element.onclick = (): void => {
+                    bammi_game.submit_move(cell.column, cell.row, bammi_game.get_active_player())
+                    update_board()
+                }
             })
         }
     }
