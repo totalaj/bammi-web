@@ -114,7 +114,6 @@ export class BammiBoardState {
                 return acc
             }, [])
 
-        console.log(cells)
         cells.forEach((cell) => {
             const found_area = this.get_area(cell.column, cell.row)
             if (found_area) {
@@ -122,13 +121,26 @@ export class BammiBoardState {
             }
         })
 
-        console.log(adjacent_area_set)
-
         const adjacent_areas: Area[] = []
 
         adjacent_area_set.forEach((adjacent_area) => adjacent_areas.push(adjacent_area))
 
         return adjacent_areas
+    }
+
+    public get_win_state(): PlayerIndex | undefined {
+        let player_index: PlayerIndex | undefined = undefined
+
+        for (let index = 0; index < this.areas.length; index++) {
+            const area = this.areas[index]
+            if (!player_index) player_index = area.owning_player
+
+            if (area.owning_player !== player_index) {
+                return undefined
+            }
+        }
+
+        return player_index
     }
 }
 
@@ -151,10 +163,17 @@ export class BammiGame {
             return
         }
 
-        if (area.slice_count === area.pie_size) {
+        if (area.slice_count >= area.pie_size) {
             // Explosion
             // @todo
             console.log("Explosion!")
+            area.slice_count = 1
+            const adjacent_areas = this.board_state.get_adjacent_areas(area)
+
+            adjacent_areas.forEach((adjacent_area) => {
+                adjacent_area.slice_count++
+                adjacent_area.owning_player = player
+            })
         }
         else {
             // Just add one, claim if unclaimed
