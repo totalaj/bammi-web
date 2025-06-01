@@ -1,0 +1,106 @@
+/**
+ * The game of Bammi:
+ * - The board is a grid of cells, distributed in areas.
+ * - Each area has a pie dish.
+ * - Each dish has slots equal to the number of connected areas.
+ * - All dishes start empty.
+ * - On your turn, click an unclaimed or your own area to add a slice to its dish and claim it.
+ * - If a dish is full (slices == slots), adding a slice causes an explosion:
+ *   - The dish keeps 1 slice, the rest are removed.
+ *   - Each connected area gets 1 slice, and is claimed by the exploding player.
+ *   - Explosions can chain if connected dishes also become full.
+ * - You win by claiming all areas.
+ */
+
+/**
+ * An index of 0 means no player
+ */
+export type PlayerIndex = number
+
+class Position {
+    public column: number
+    public row: number
+
+    constructor(column: number, row: number) {
+        this.column = column
+        this.row = row
+    }
+
+    public equals(other: Position): boolean {
+        return this.column === other.column && this.row === other.row
+    }
+
+    /**
+     * Returns false if the positions are equal
+     */
+    public is_adjacent(other: Position): boolean {
+        if (this.equals(other)) return false
+        return Math.abs(this.column - other.column) === 1
+            || Math.abs(this.row - other.row) === 1
+    }
+}
+
+type Area = {
+    owning_player: PlayerIndex,
+    cells: Position[]
+}
+
+export class BammiBoardState {
+    public readonly BOARD_WIDTH: number
+    public readonly BOARD_HEIGHT: number
+
+    public areas: Area[] = []
+
+    constructor(board_width: number, board_height: number) {
+        // Construct the board and distribute areas
+        this.BOARD_WIDTH = board_width
+        this.BOARD_HEIGHT = board_height
+
+        // Some arbitrary board
+        // One area per column, for now
+        for (let column = 0; column < this.BOARD_WIDTH; column++) {
+            const cells: Position[] = []
+
+            for (let row = 0; row < this.BOARD_HEIGHT; row++) {
+                cells.push(new Position(column, row))
+            }
+
+            this.areas.push({
+                owning_player: 0,
+                cells: cells
+            })
+        }
+    }
+
+    private get_area(column: number, row: number): Area | undefined {
+        // We could precompute a mapping for col/row to area, if we want do do this more often
+        const position = new Position(column, row)
+        for (let index = 0; index < this.areas.length; index++) {
+            const area = this.areas[index]
+            if (area.cells.some((cell) => cell.equals(position))) {
+                return area
+            }
+        }
+
+        return undefined
+    }
+
+    private get_adjacent_areas(area: Area): Area[] {
+        const areas: Set<Area> = new Set()
+
+        return []
+    }
+}
+
+export class BammiGame {
+    public board_state: BammiBoardState
+
+    constructor() {
+        this.board_state = new BammiBoardState(10, 10)
+    }
+
+    submit_move(column: number, row: number, player: PlayerIndex): void {
+
+    }
+}
+

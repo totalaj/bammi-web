@@ -5,12 +5,13 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack --mode=production && npm run copy-assets",
+    "start": "npm run clean && webpack --mode=production && npm run copy-assets",
     "open": "start dist/index.html",
     "publish": "echo \"Run SFTP: Sync Local -> Remote\" && exit 1",
-    "copy-assets": "node -e \"require('fs').cpSync('./src/assets', './dist/assets', {recursive: true});\""
+    "copy-assets": "node -e \"require('fs').cpSync('./src/assets', './dist/assets', {recursive: true});\"",
+    "clean": "node -e \"require('fs').rmSync('./dist', { recursive: true, force: true });\""
   },
-  "author": "Totalaj Krantz",
+  "author": "Totalaj Krantz & Benjamin Mättö",
   "license": "ISC",
   "devDependencies": {
     "@eslint/js": "^9.17.0",
