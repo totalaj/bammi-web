@@ -133,7 +133,7 @@ export class BammiBoardState {
 
         for (let index = 0; index < this.areas.length; index++) {
             const area = this.areas[index]
-            if (player_index === undefined) {
+            if (player_index === undefined && area.owning_player !== 0) {
                 player_index = area.owning_player
             }
 
@@ -148,9 +148,17 @@ export class BammiBoardState {
 
 export class BammiGame {
     public board_state: BammiBoardState
+    private _turn_order: PlayerIndex[]
+    private _turn_index: number
 
     constructor() {
+        this._turn_order = [ 1, 2 ]
+        this._turn_index = 0
         this.board_state = new BammiBoardState(10, 10)
+    }
+
+    public get_active_player(): PlayerIndex {
+        return this._turn_order[this._turn_index]
     }
 
     public submit_move(column: number, row: number, player: PlayerIndex): void {
@@ -169,6 +177,9 @@ export class BammiGame {
             console.warn("Player", player, "cannot add to area at column", column, "and row", row)
             return
         }
+
+        // Increment player pointer
+        this._turn_index = (this._turn_index + 1) % this._turn_order.length
 
         let areas_to_add_to = [ area ]
 

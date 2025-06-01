@@ -30,7 +30,7 @@ function main(): void {
                 cell_element.textContent = `${element.slice_count}/${element.pie_size}`
 
                 cell_element.onclick = (): void => {
-                    bammi_game.submit_move(cell.column, cell.row, 1 /** Debug player index */)
+                    bammi_game.submit_move(cell.column, cell.row, bammi_game.get_active_player())
                     update_board()
                 }
             })
