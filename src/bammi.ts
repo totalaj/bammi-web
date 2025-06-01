@@ -49,7 +49,7 @@ export class BammiBoardState {
     public readonly BOARD_WIDTH: number
     public readonly BOARD_HEIGHT: number
 
-    private _areas: Area[] = []
+    public areas: Area[] = []
 
     constructor(board_width: number, board_height: number) {
         // Construct the board and distribute areas
@@ -65,7 +65,7 @@ export class BammiBoardState {
                 cells.push(new Position(column, row))
             }
 
-            this._areas.push({
+            this.areas.push({
                 owning_player: 0,
                 cells: cells
             })
@@ -75,8 +75,8 @@ export class BammiBoardState {
     private get_area(column: number, row: number): Area | undefined {
         // We could precompute a mapping for col/row to area, if we want do do this more often
         const position = new Position(column, row)
-        for (let index = 0; index < this._areas.length; index++) {
-            const area = this._areas[index]
+        for (let index = 0; index < this.areas.length; index++) {
+            const area = this.areas[index]
             if (area.cells.some((cell) => cell.equals(position))) {
                 return area
             }
