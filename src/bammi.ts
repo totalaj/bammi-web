@@ -42,7 +42,9 @@ class Position {
 
 type Area = {
     owning_player: PlayerIndex,
-    cells: Position[]
+    cells: Position[],
+    pie_size: number,
+    slice_count: number
 }
 
 export class BammiBoardState {
@@ -67,12 +69,20 @@ export class BammiBoardState {
 
             this.areas.push({
                 owning_player: 0,
-                cells: cells
+                cells: cells,
+                pie_size: 0,
+                slice_count: 0
             })
+        }
+
+        // Initialize pie sizes
+        for (let index = 0; index < this.areas.length; index++) {
+            const area = this.areas[index]
+            area.pie_size = this.get_adjacent_areas(area).length
         }
     }
 
-    private get_area(column: number, row: number): Area | undefined {
+    public get_area(column: number, row: number): Area | undefined {
         // We could precompute a mapping for col/row to area, if we want do do this more often
         const position = new Position(column, row)
         for (let index = 0; index < this.areas.length; index++) {
@@ -85,7 +95,7 @@ export class BammiBoardState {
         return undefined
     }
 
-    private get_adjacent_areas(area: Area): Area[] {
+    public get_adjacent_areas(area: Area): Area[] {
         const areas: Set<Area> = new Set()
 
         return []
@@ -99,8 +109,27 @@ export class BammiGame {
         this.board_state = new BammiBoardState(10, 10)
     }
 
-    submit_move(column: number, row: number, player: PlayerIndex): void {
+    public submit_move(column: number, row: number, player: PlayerIndex): void {
+        const area = this.board_state.get_area(column, row)
+        if (!area) {
+            console.error("Area at column", column, "and row", row, "has no area to be found!")
+            return
+        }
 
+        if (area.owning_player !== 0 && area.owning_player !== player) {
+            console.warn("Player", player, "cannot add to area at column", column, "and row", row)
+            return
+        }
+
+        if (area.slice_count === area.pie_size && false /** Debug bs */) {
+            // Explosion
+            // @todo
+        }
+        else {
+            // Just add one, claim if unclaimed
+            area.owning_player = player
+            area.slice_count++
+        }
     }
 }
 
