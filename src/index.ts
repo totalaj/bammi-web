@@ -26,6 +26,9 @@ function main(): void {
                 cell_element.classList.add('player-' + element.owning_player.toFixed(0))
                 cell_element.style.gridColumn = (cell.column + 1).toFixed(0)
                 cell_element.style.gridRow = (cell.row + 1).toFixed(0)
+
+                cell_element.textContent = `${element.slice_count}/${element.pie_size}`
+
                 cell_element.onclick = (): void => {
                     bammi_game.submit_move(cell.column, cell.row, 1 /** Debug player index */)
                     update_board()

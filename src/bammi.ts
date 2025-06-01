@@ -96,9 +96,39 @@ export class BammiBoardState {
     }
 
     public get_adjacent_areas(area: Area): Area[] {
-        const areas: Set<Area> = new Set()
+        const adjacent_area_set: Set<Area> = new Set()
 
-        return []
+        const cells = area.cells
+            .flatMap((area_cell) =>
+                [ // Gather adjacent cells from area
+                    new Position(area_cell.column + 1, area_cell.row),
+                    new Position(area_cell.column - 1, area_cell.row),
+                    new Position(area_cell.column, area_cell.row + 1),
+                    new Position(area_cell.column, area_cell.row - 1)
+                ])
+            .filter((cell) => !area.cells.some((area_cell) => area_cell.equals(cell))) // Remove cells that are in the original area
+            .reduce<Position[]>((acc, val) => {
+                if (!acc.some((pos) => pos.equals(val))) {
+                    acc.push(val)
+                }
+                return acc
+            }, [])
+
+        console.log(cells)
+        cells.forEach((cell) => {
+            const found_area = this.get_area(cell.column, cell.row)
+            if (found_area) {
+                adjacent_area_set.add(found_area)
+            }
+        })
+
+        console.log(adjacent_area_set)
+
+        const adjacent_areas: Area[] = []
+
+        adjacent_area_set.forEach((adjacent_area) => adjacent_areas.push(adjacent_area))
+
+        return adjacent_areas
     }
 }
 
@@ -121,9 +151,10 @@ export class BammiGame {
             return
         }
 
-        if (area.slice_count === area.pie_size && false /** Debug bs */) {
+        if (area.slice_count === area.pie_size) {
             // Explosion
             // @todo
+            console.log("Explosion!")
         }
         else {
             // Just add one, claim if unclaimed
