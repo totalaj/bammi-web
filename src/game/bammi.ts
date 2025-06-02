@@ -113,7 +113,7 @@ export class BammiGame {
     constructor() {
         this._turn_order = [ 1, 2 ]
         this._turn_index = 0
-        this.board_state = new BammiBoardState(10, 10)
+        this.board_state = new BammiBoardState(5, 5)
     }
 
     public get_active_player(): PlayerIndex {
