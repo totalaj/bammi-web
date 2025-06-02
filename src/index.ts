@@ -1,8 +1,8 @@
 import { BammiGame } from "./game/bammi"
-import { Position } from "./math/position";
+import { Position } from "./math/position"
 
 function main(): void {
-    const web_socket = new WebSocket("ws://localhost:3000", "bammi");
+    const web_socket = new WebSocket("ws://localhost:3000", "bammi")
 
     web_socket.onopen = (event: Event): void => {
         const msg = {
@@ -37,13 +37,17 @@ function main(): void {
             area.cells.forEach((cell, cell_index) => {
                 const cell_element = grid.appendChild(document.createElement('div'))
                 cells.push(cell_element)
-                cell_element.classList.add('game-cell')
-                cell_element.classList.add('player-' + area.owning_player.toFixed(0))
+                const player_class = 'player-' + area.owning_player.toFixed(0)
+                cell_element.classList.add('game-cell', 'medium', player_class)
                 cell_element.style.gridColumn = (cell.column + 1).toFixed(0)
                 cell_element.style.gridRow = (cell.row + 1).toFixed(0)
 
                 if (cell_index === 0) {
-                    cell_element.textContent = `${area.slice_count}/${area.pie_size}`
+                    const pie = cell_element.appendChild(document.createElement('div'))
+                    pie.classList.add('pie', player_class)
+                    const fill_percentage = ((area.slice_count / area.pie_size) * 100).toPrecision(2)
+                    const color_var = 'var(--pie-color)'
+                    pie.style.backgroundImage = `conic-gradient(${color_var} 0%, ${color_var} ${fill_percentage}%, transparent ${fill_percentage}%)`
                 }
 
                 cell_element.onclick = (): void => {

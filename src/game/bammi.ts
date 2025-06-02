@@ -1,5 +1,5 @@
 import { get_area_adjacent_positions, Position } from "../math/position"
-import { generate_checkerboard_board, generate_zipf_board } from "./board_generation"
+import { generate_zipf_board } from "./board_generation"
 
 /**
  * The game of Bammi:
@@ -113,7 +113,7 @@ export class BammiGame {
     constructor() {
         this._turn_order = [ 1, 2 ]
         this._turn_index = 0
-        this.board_state = new BammiBoardState(5, 5)
+        this.board_state = new BammiBoardState(8, 8)
     }
 
     public get_active_player(): PlayerIndex {

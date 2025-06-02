@@ -10,10 +10,11 @@ body {
 }
 
 .game-cell {
+    --cell-size: 128px;
     --cell-color: white;
     background-color: var(--cell-color);
-    width: 128px;
-    height: 128px;
+    width: var(--cell-size);
+    height: var(--cell-size);
     border-width: 1px;
     border-color: transparent;
     border-style: solid;
@@ -25,4 +26,31 @@ body {
 
 .game-cell.player-2 {
     --cell-color: pink;
+}
+
+.game-cell.small {
+    --cell-size: 32px;
+}
+
+.game-cell.medium {
+    --cell-size: 96px;
+}
+
+.game-cell.large {
+    --cell-size: 128px;
+}
+
+.pie {
+    --pie-color: green;
+    clip-path: circle(35% at center);
+    width: 100%;
+    height: 100%;
+}
+
+.pie.player-1 {
+    --pie-color: blue;
+}
+
+.pie.player-2 {
+    --pie-color: red;
 }
