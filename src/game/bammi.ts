@@ -1,4 +1,5 @@
 import { Position } from "../math/position"
+import { generate_checkerboard_board } from "./board_generation"
 
 /**
  * The game of Bammi:
@@ -37,22 +38,15 @@ export class BammiBoardState {
         this.BOARD_WIDTH = board_width
         this.BOARD_HEIGHT = board_height
 
-        // Some arbitrary board
-        // One area per column, for now
-        for (let column = 0; column < this.BOARD_WIDTH; column++) {
-            
-            for (let row = 0; row < this.BOARD_HEIGHT; row++) {
-                const cells: Position[] = []
-                cells.push(new Position(column, row))
-                this.areas.push({
-                    owning_player: 0,
-                    cells: cells,
-                    pie_size: 0,
-                    slice_count: 0
-                })
+        const cell_groups = generate_checkerboard_board(this.BOARD_WIDTH, this.BOARD_HEIGHT)
+        this.areas = cell_groups.map((group) => {
+            return {
+                owning_player: 0,
+                cells: group,
+                pie_size: 0,
+                slice_count: 0
             }
-
-        }
+        })
 
         // Initialize pie sizes
         for (let index = 0; index < this.areas.length; index++) {
