@@ -1,4 +1,5 @@
-import { BammiGame, Position } from "./bammi"
+import { BammiGame } from "./game/bammi"
+import { Position } from "./math/position";
 
 function main(): void {
     const web_socket = new WebSocket("ws://localhost:3000", "bammi");

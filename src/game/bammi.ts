@@ -1,3 +1,5 @@
+import { Position } from "../math/position"
+
 /**
  * The game of Bammi:
  * - The board is a grid of cells, distributed in areas.
@@ -16,29 +18,6 @@
  * An index of 0 means no player
  */
 export type PlayerIndex = number
-
-export class Position {
-    public column: number
-    public row: number
-
-    constructor(column: number, row: number) {
-        this.column = column
-        this.row = row
-    }
-
-    public equals(other: Position): boolean {
-        return this.column === other.column && this.row === other.row
-    }
-
-    /**
-     * Returns false if the positions are equal
-     */
-    public is_adjacent(other: Position): boolean {
-        if (this.equals(other)) return false
-        return Math.abs(this.column - other.column) === 1
-            || Math.abs(this.row - other.row) === 1
-    }
-}
 
 type Area = {
     owning_player: PlayerIndex,
@@ -61,18 +40,18 @@ export class BammiBoardState {
         // Some arbitrary board
         // One area per column, for now
         for (let column = 0; column < this.BOARD_WIDTH; column++) {
-            const cells: Position[] = []
-
+            
             for (let row = 0; row < this.BOARD_HEIGHT; row++) {
+                const cells: Position[] = []
                 cells.push(new Position(column, row))
+                this.areas.push({
+                    owning_player: 0,
+                    cells: cells,
+                    pie_size: 0,
+                    slice_count: 0
+                })
             }
 
-            this.areas.push({
-                owning_player: 0,
-                cells: cells,
-                pie_size: 0,
-                slice_count: 0
-            })
         }
 
         // Initialize pie sizes
