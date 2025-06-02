@@ -1,4 +1,4 @@
-import { Position } from "../math/position"
+import { get_area_adjacent_positions, Position } from "../math/position"
 
 export function generate_checkerboard_board(width: number, height: number): Position[][] {
     const result: Position[][] = []
@@ -44,6 +44,21 @@ export function generate_zipf_board(width: number, height: number): Position[][]
 
         if (existing_group) {
             // Add random in-bounds unoccupied adjacent cell
+            const adjacent_cells = get_area_adjacent_positions(existing_group)
+                .filter((cell) => cell.column >= 0 && cell.column < width && cell.row >= 0 && cell.row < height)
+                .filter((cell) => {
+                    return cell_groups.some((group) => {
+                        // Only cells that aren't contained in a group
+                        return group.some((group_cell) => group_cell.equals(cell))
+                    }) === false
+                })
+
+            if (adjacent_cells.length > 0) {
+                const random_adjacent_cell = adjacent_cells[Math.floor(Math.random() * adjacent_cells.length)]
+                // Remove cell from tracking set
+                cell_set = cell_set.filter((cell) => !cell.equals(random_adjacent_cell))
+                existing_group.push(random_adjacent_cell)
+            }
         }
         else {
             // Remove cell from tracking set
