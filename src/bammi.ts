@@ -82,13 +82,13 @@ export class BammiBoardState {
         }
     }
 
-    public get_area(column: number, row: number): Area | undefined {
+    public get_area(column: number, row: number): [area: Area, index: number] | undefined {
         // We could precompute a mapping for col/row to area, if we want do do this more often
         const position = new Position(column, row)
         for (let index = 0; index < this.areas.length; index++) {
             const area = this.areas[index]
             if (area.cells.some((cell) => cell.equals(position))) {
-                return area
+                return [ area, index ]
             }
         }
 
@@ -117,7 +117,7 @@ export class BammiBoardState {
         cells.forEach((cell) => {
             const found_area = this.get_area(cell.column, cell.row)
             if (found_area) {
-                adjacent_area_set.add(found_area)
+                adjacent_area_set.add(found_area[0])
             }
         })
 
@@ -146,47 +146,41 @@ export class BammiBoardState {
     }
 }
 
+export interface MessageMove {
+    message_type: string,
+    area: number,
+    player: PlayerIndex,
+}
+
 export class BammiGame {
     public board_state: BammiBoardState
     private _turn_order: PlayerIndex[]
     private _turn_index: number
+    private _socket: WebSocket
 
-    constructor() {
+    constructor(socket: WebSocket) {
         this._turn_order = [ 1, 2 ]
         this._turn_index = 0
         this.board_state = new BammiBoardState(10, 10)
+        this._socket = socket
     }
 
     public get_active_player(): PlayerIndex {
         return this._turn_order[this._turn_index]
     }
 
-    public submit_move(column: number, row: number, player: PlayerIndex): void {
-        if (this.board_state.get_win_state() !== undefined) {
-            console.log("We already have a winner, you can't play any more")
-            return
-        }
-
-        const area = this.board_state.get_area(column, row)
-        if (!area) {
-            console.error("Area at column", column, "and row", row, "has no area to be found!")
-            return
-        }
-
-        if (area.owning_player !== 0 && area.owning_player !== player) {
-            console.warn("Player", player, "cannot add to area at column", column, "and row", row)
-            return
-        }
-
+    public receive_move(msg: MessageMove): void {
         // Increment player pointer
         this._turn_index = (this._turn_index + 1) % this._turn_order.length
+
+        const area = this.board_state.areas[msg.area]
 
         let areas_to_add_to = [ area ]
 
         while (areas_to_add_to.length > 0) {
             const top_area = areas_to_add_to[0]
             areas_to_add_to = areas_to_add_to.slice(1) // Remove the first element
-            top_area.owning_player = player
+            top_area.owning_player = msg.player
 
             if (top_area.slice_count >= top_area.pie_size) {
                 // Explosion
@@ -203,6 +197,35 @@ export class BammiGame {
                 return
             }
         }
+    }
+
+    public submit_move(column: number, row: number, player: PlayerIndex): void {
+        if (this.board_state.get_win_state() !== undefined) {
+            console.log("We already have a winner, you can't play any more")
+            return
+        }
+
+        const area = this.board_state.get_area(column, row)
+        if (!area) {
+            console.error("Area at column", column, "and row", row, "has no area to be found!")
+            return
+        }
+        else {
+            if (area[0].owning_player !== 0 && area[0].owning_player !== player) {
+                console.warn("Player", player, "cannot add to area at column", column, "and row", row)
+                return
+            }
+        }
+
+        const msg: MessageMove = {
+            message_type: "move",
+            area: area[1],
+            player: player
+        }
+	console.log(msg)
+        this._socket.send(JSON.stringify(msg))
+
+        this.receive_move(msg)
     }
 }
 

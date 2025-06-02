@@ -14,6 +14,10 @@ const config = {
             template: "./src/index.html",
             filename: "index.html",
         }),
+	new HtmlWebpackPlugin({
+            template: "./src/lobby.html",
+            filename: "lobby.html",
+        }),
     ],
     module: {
         rules: [

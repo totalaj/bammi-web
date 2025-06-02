@@ -1,21 +1,16 @@
 import { BammiGame } from "./bammi"
 
 function main(): void {
-    const web_socket = new WebSocket("ws://localhost:3000", "bammi");
+    const socket = new WebSocket("ws://localhost:3000", "bammi")
 
-    web_socket.onopen = (event: Event): void => {
-        const msg = {
-            message_type: "move",
-            move_cell: 3
-        }
-        web_socket.send(JSON.stringify(msg))
+    socket.onopen = (event: Event): void => {
     }
 
-    web_socket.onmessage = (event: MessageEvent<any>): void => {
+    socket.onmessage = (event: MessageEvent<any>): void => {
         console.log("message: " + event.data)
     }
 
-    const bammi_game = new BammiGame()
+    const bammi_game = new BammiGame(socket)
 
     const grid = document.body.appendChild(document.createElement('div'))
     grid.id = 'game-grid'

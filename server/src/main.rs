@@ -7,7 +7,7 @@ use tokio_tungstenite::{
     tungstenite::{Error, Result},
 };
 use serde::{Deserialize, Serialize};
-
+use serde_json::Value;
 
 async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
     if let Err(e) = handle_connection(peer, stream).await {
@@ -19,9 +19,10 @@ async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Move {
+struct MessageMove {
     message_type: String,
-    move_cell: i32,
+    area: i32,
+    player: i32,
 }
 
 async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
@@ -31,11 +32,21 @@ async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
 
     while let Some(msg) = ws_stream.next().await {
         let msg = msg?;
-	
+
+	//ADD PROPER ERROR HANDLING TO THIS
         if msg.is_text() || msg.is_binary() {
 	    if let Ok(msg_string) = msg.into_text() {
-		if let Ok(bammi_move) = serde_json::from_str::<Move>(msg_string.as_str()) {
-		    info!("{:?}", bammi_move);
+		if let Ok(message) = serde_json::from_str::<Value>(msg_string.as_str()) {
+		    let message_type: &str = message["message_type"].as_str().unwrap();
+		    info!("{:?}", message_type);
+		    match message_type {
+			"move" => {
+			    let message_move: MessageMove = serde_json::from_value(message).unwrap();
+			    info!("{:?}", message_move);
+			},
+			&_ => {
+			}
+		    }
 		}
 	    }
         }
