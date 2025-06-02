@@ -1,4 +1,4 @@
-import { Position } from "../math/position"
+import { get_area_adjacent_positions, Position } from "../math/position"
 import { generate_checkerboard_board } from "./board_generation"
 
 /**
@@ -71,24 +71,10 @@ export class BammiBoardState {
     public get_adjacent_areas(area: Area): Area[] {
         const adjacent_area_set: Set<Area> = new Set()
 
-        const cells = area.cells
-            .flatMap((area_cell) =>
-                [ // Gather adjacent cells from area
-                    new Position(area_cell.column + 1, area_cell.row),
-                    new Position(area_cell.column - 1, area_cell.row),
-                    new Position(area_cell.column, area_cell.row + 1),
-                    new Position(area_cell.column, area_cell.row - 1)
-                ])
-            .filter((cell) => !area.cells.some((area_cell) => area_cell.equals(cell))) // Remove cells that are in the original area
-            .reduce<Position[]>((acc, val) => {
-                if (!acc.some((pos) => pos.equals(val))) {
-                    acc.push(val)
-                }
-                return acc
-            }, [])
+        const positions = get_area_adjacent_positions(area.cells)
 
-        cells.forEach((cell) => {
-            const found_area = this.get_area(cell.column, cell.row)
+        positions.forEach((position) => {
+            const found_area = this.get_area(position.column, position.row)
             if (found_area) {
                 adjacent_area_set.add(found_area)
             }
