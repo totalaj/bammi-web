@@ -17,7 +17,7 @@
  */
 export type PlayerIndex = number
 
-class Position {
+export class Position {
     public column: number
     public row: number
 

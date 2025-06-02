@@ -1,24 +1,28 @@
 body {
-    background-color: aqua;
+    background-color: palegoldenrod;
 }
 
 #game-grid {
-    background-color: white;
+    background-color: gray;
     display: grid;
     justify-content: center;
     align-items: center;
 }
 
 .game-cell {
-    background-color: gray;
+    --cell-color: white;
+    background-color: var(--cell-color);
     width: 32px;
     height: 32px;
+    border-width: 1px;
+    border-color: transparent;
+    border-style: solid;
 }
 
 .game-cell.player-1 {
-    background-color: blue;
+    --cell-color: lightblue;
 }
 
 .game-cell.player-2 {
-    background-color: red;
+    --cell-color: pink;
 }
