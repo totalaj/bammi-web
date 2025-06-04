@@ -1,6 +1,12 @@
 import { BammiGame } from "./game/bammi"
 import { Position } from "./math/position"
 
+const PLAYER_INDEX_TO_COLOR: Map<number, string> = new Map([
+    [ 0, 'NONE' ],
+    [ 1, 'blue' ],
+    [ 2, 'red' ]
+])
+
 function main(): void {
     const web_socket = new WebSocket("ws://localhost:3000", "bammi")
 
@@ -20,6 +26,11 @@ function main(): void {
 
     const grid = document.body.appendChild(document.createElement('div'))
     grid.id = 'game-grid'
+
+    const turn_indicator = document.body.appendChild(document.createElement('h4'))
+    turn_indicator.id = 'turn-indicator'
+    turn_indicator.classList.add('player-' + bammi_game.get_active_player().toFixed(0))
+
     const cells: HTMLElement[] = []
 
     // Placeholder visuals
@@ -28,6 +39,17 @@ function main(): void {
             grid.removeChild(cell)
         })
         cells.length = 0
+
+        const current_player = bammi_game.get_active_player()
+        console.log("current player", current_player)
+
+
+        turn_indicator.classList.forEach((class_name) => {
+            if (class_name.match('player-')) {
+                turn_indicator.classList.replace(class_name, 'player-' + current_player.toFixed(0))
+            }
+        })
+        turn_indicator.innerText = `${PLAYER_INDEX_TO_COLOR.get(current_player)}'s turn`
 
         const state = bammi_game.board_state
 
@@ -46,7 +68,7 @@ function main(): void {
                     const pie = cell_element.appendChild(document.createElement('div'))
                     pie.classList.add('pie', player_class)
                     const fill_percentage = ((area.slice_count / area.pie_size) * 100).toPrecision(2)
-                    const color_var = 'var(--pie-color)'
+                    const color_var = 'var(--highlight-color)'
                     pie.style.backgroundImage = `conic-gradient(${color_var} 0%, ${color_var} ${fill_percentage}%, transparent ${fill_percentage}%)`
                 }
 
