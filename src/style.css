@@ -43,8 +43,8 @@ body {
 }
 
 .player-5, .player-5 * {
-    --base-color: #fdf8cf;
-    --highlight-color: #fdfd08;
+    --base-color: #feffd7;
+    --highlight-color: #FFEB3B;
 }
 
 .player-6, .player-6 * {
