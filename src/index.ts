@@ -1,11 +1,7 @@
 import { BammiGame } from "./game/bammi"
+import { get_player_info } from "./game/player_info"
 import { Position } from "./math/position"
 
-const PLAYER_INDEX_TO_COLOR: Map<number, string> = new Map([
-    [ 0, 'NONE' ],
-    [ 1, 'blue' ],
-    [ 2, 'red' ]
-])
 
 function main(): void {
     const web_socket = new WebSocket("ws://localhost:3000", "bammi")
@@ -29,7 +25,7 @@ function main(): void {
 
     const turn_indicator = document.body.appendChild(document.createElement('h4'))
     turn_indicator.id = 'turn-indicator'
-    turn_indicator.classList.add('player-' + bammi_game.get_active_player().toFixed(0))
+    turn_indicator.classList.add(get_player_info(bammi_game.get_active_player()).class)
 
     const cells: HTMLElement[] = []
 
@@ -40,33 +36,32 @@ function main(): void {
         })
         cells.length = 0
 
-        const current_player = bammi_game.get_active_player()
+        const current_player = get_player_info(bammi_game.get_active_player())
         console.log("current player", current_player)
-
 
         turn_indicator.classList.forEach((class_name) => {
             if (class_name.match('player-')) {
-                turn_indicator.classList.replace(class_name, 'player-' + current_player.toFixed(0))
+                turn_indicator.classList.replace(class_name, current_player.class)
             }
         })
-        turn_indicator.innerText = `${PLAYER_INDEX_TO_COLOR.get(current_player)}'s turn`
+        turn_indicator.innerText = `${current_player.flavour}'s turn`
 
         const state = bammi_game.board_state
 
         for (let area_index = 0; area_index < state.areas.length; area_index++) {
             const area = state.areas[area_index]
+            const area_player = get_player_info(area.owning_player)
 
             area.cells.forEach((cell, cell_index) => {
                 const cell_element = grid.appendChild(document.createElement('div'))
                 cells.push(cell_element)
-                const player_class = 'player-' + area.owning_player.toFixed(0)
-                cell_element.classList.add('game-cell', 'medium', player_class)
+                cell_element.classList.add('game-cell', 'medium', area_player.class)
                 cell_element.style.gridColumn = (cell.column + 1).toFixed(0)
                 cell_element.style.gridRow = (cell.row + 1).toFixed(0)
 
-                if (cell_index === 0) {
+                if (cell_index === 0 && !area_player.is_null_player) {
                     const pie = cell_element.appendChild(document.createElement('div'))
-                    pie.classList.add('pie', player_class)
+                    pie.classList.add('pie', area_player.class)
                     const fill_percentage = ((area.slice_count / area.pie_size) * 100).toPrecision(2)
                     const color_var = 'var(--highlight-color)'
                     pie.style.backgroundImage = `conic-gradient(${color_var} 0%, ${color_var} ${fill_percentage}%, transparent ${fill_percentage}%)`
