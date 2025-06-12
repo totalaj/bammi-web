@@ -1,4 +1,4 @@
-import { BammiGame } from "./game/bammi"
+import { BammiGame, TurnEventType } from "./game/bammi"
 import { get_player_info } from "./game/player_info"
 import { Position } from "./math/position"
 
@@ -68,7 +68,21 @@ function main(): void {
                 }
 
                 cell_element.onclick = (): void => {
-                    bammi_game.submit_move(cell.column, cell.row, bammi_game.get_active_player())
+                    const result = bammi_game.submit_move(cell.column, cell.row, bammi_game.get_active_player())
+                    result.forEach((turn_event) => {
+                        if (turn_event.is(TurnEventType.ADD)) {
+                            console.log("Add-event! Adding to", turn_event.area_to_add_to)
+                        }
+                        else if (turn_event.is(TurnEventType.END)) {
+                            console.log("End-event! Turn is now ending", turn_event)
+                        }
+                        else if (turn_event.is(TurnEventType.EXPLOSION)) {
+                            console.log("Boom! Explosion", turn_event)
+                        }
+                        else if (turn_event.is(TurnEventType.VICTORY)) {
+                            console.log("It's game over. The winner is", turn_event.winning_player)
+                        }
+                    })
                     update_board()
                 }
                 const top_adjacent = new Position(cell.column, cell.row - 1)
