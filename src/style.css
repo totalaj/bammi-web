@@ -22,14 +22,44 @@ body {
     border-style: solid;
 }
 
-.player-1 {
-    --base-color: lightblue;
-    --highlight-color: blue;
+.player-1, .player-1 * {
+    --base-color: rgb(189, 226, 238);
+    --highlight-color: rgb(12, 12, 245);
 }
 
-.player-2 {
-    --base-color: pink;
-    --highlight-color: red;
+.player-2, .player-2 * {
+    --base-color: rgb(243, 191, 200);
+    --highlight-color: rgb(252, 7, 7);
+}
+
+.player-3, .player-3 * {
+    --base-color: #CDC1FF;
+    --highlight-color: #7371FC;
+}
+
+.player-4, .player-4 * {
+    --base-color: #abfdd1;
+    --highlight-color: #47FF9A;
+}
+
+.player-5, .player-5 * {
+    --base-color: #feffd7;
+    --highlight-color: #FFEB3B;
+}
+
+.player-6, .player-6 * {
+    --base-color: rgb(255, 204, 242);
+    --highlight-color: rgb(255, 0, 221);
+}
+
+.player-7, .player-7 * {
+    --base-color: rgb(144, 240, 243);
+    --highlight-color: rgb(3, 217, 255);
+}
+
+.player-8, .player-8 * {
+    --base-color: rgb(255, 220, 192);
+    --highlight-color: rgb(255, 136, 0);
 }
 
 .game-cell.small {
