@@ -21,6 +21,8 @@ export default [
   ...tseslint.configs.recommendedTypeChecked,
   { rules: {
       "semi": ["warn", "never"],
+      "indent": ["warn", 4],
+      "object-shorthand": ["error", "never"],
       "constructor-super": "error",
       "getter-return": "error",
       "no-const-assign": "error",
