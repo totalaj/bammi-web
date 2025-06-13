@@ -37,14 +37,14 @@ function main(): void {
         cells.length = 0
 
         const current_player = get_player_info(bammi_game.get_active_player())
-        console.log("current player", current_player)
 
         turn_indicator.classList.forEach((class_name) => {
             if (class_name.match('player-')) {
                 turn_indicator.classList.replace(class_name, current_player.class)
             }
         })
-        turn_indicator.innerText = `${current_player.flavour}'s turn`
+
+        turn_indicator.innerText = `${current_player.color}'s turn.\nTurn all pies into ${current_player.flavour} pies!`
 
         const state = bammi_game.board_state
 
@@ -68,7 +68,18 @@ function main(): void {
                 }
 
                 cell_element.onclick = (): void => {
-                    bammi_game.submit_move(cell.column, cell.row, bammi_game.get_active_player())
+                    const active_player = bammi_game.get_active_player()
+                    const result = bammi_game.submit_move(cell.column, cell.row, active_player)
+
+                    for (let index = 0; index < result.explosions.length; index++) {
+                        const explosion = result.explosions[index]
+                        console.log("Explosion at area", explosion.exploding_area, "spreading into", explosion.adjacent_areas.length, "adjacent areas")
+                    }
+
+                    if (result.victory) {
+                        console.log("Game over, the winner is", get_player_info(active_player).flavour)
+                    }
+
                     update_board()
                 }
                 const top_adjacent = new Position(cell.column, cell.row - 1)

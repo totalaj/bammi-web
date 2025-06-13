@@ -105,6 +105,16 @@ export class BammiBoardState {
     }
 }
 
+type ExplosionTurnEvent = {
+    exploding_area: Area
+    adjacent_areas: Area[]
+}
+
+type TurnResult = {
+    explosions: ExplosionTurnEvent[]
+    victory: boolean
+}
+
 export class BammiGame {
     public board_state: BammiBoardState
     private _turn_order: PlayerIndex[]
@@ -120,21 +130,26 @@ export class BammiGame {
         return this._turn_order[this._turn_index]
     }
 
-    public submit_move(column: number, row: number, player: PlayerIndex): void {
+    public submit_move(column: number, row: number, player: PlayerIndex): TurnResult {
+        const return_value: TurnResult = {
+            explosions: [],
+            victory: false
+        }
+
         if (this.board_state.get_win_state() !== undefined) {
             console.log("We already have a winner, you can't play any more")
-            return
+            return return_value
         }
 
         const area = this.board_state.get_area(column, row)
         if (!area) {
             console.error("Area at column", column, "and row", row, "has no area to be found!")
-            return
+            return return_value
         }
 
         if (area.owning_player !== 0 && area.owning_player !== player) {
             console.warn("Player", player, "cannot add to area at column", column, "and row", row)
-            return
+            return return_value
         }
 
         // Increment player pointer
@@ -150,7 +165,13 @@ export class BammiGame {
             if (top_area.slice_count >= top_area.pie_size) {
                 // Explosion
                 top_area.slice_count = 0
-                areas_to_add_to.push(...this.board_state.get_adjacent_areas(top_area))
+                const adjacent_areas = this.board_state.get_adjacent_areas(top_area)
+                areas_to_add_to.push(...adjacent_areas)
+
+                return_value.explosions.push({
+                    exploding_area: top_area,
+                    adjacent_areas: adjacent_areas
+                })
             }
 
             top_area.slice_count++
@@ -159,9 +180,12 @@ export class BammiGame {
 
             if (winner !== undefined) {
                 console.log("We have a winner! Player with index", winner)
-                return
+                return_value.victory = true
+                return return_value
             }
         }
+
+        return return_value
     }
 }
 
