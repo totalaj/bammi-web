@@ -1,3 +1,6 @@
+import { get_area_adjacent_positions, Position } from "../math/position"
+import { generate_zipf_board } from "./board_generation"
+
 /**
  * The game of Bammi:
  * - The board is a grid of cells, distributed in areas.
@@ -17,29 +20,6 @@
  */
 export type PlayerIndex = number
 
-class Position {
-    public column: number
-    public row: number
-
-    constructor(column: number, row: number) {
-        this.column = column
-        this.row = row
-    }
-
-    public equals(other: Position): boolean {
-        return this.column === other.column && this.row === other.row
-    }
-
-    /**
-     * Returns false if the positions are equal
-     */
-    public is_adjacent(other: Position): boolean {
-        if (this.equals(other)) return false
-        return Math.abs(this.column - other.column) === 1
-            || Math.abs(this.row - other.row) === 1
-    }
-}
-
 type Area = {
     owning_player: PlayerIndex,
     cells: Position[],
@@ -58,22 +38,15 @@ export class BammiBoardState {
         this.BOARD_WIDTH = board_width
         this.BOARD_HEIGHT = board_height
 
-        // Some arbitrary board
-        // One area per column, for now
-        for (let column = 0; column < this.BOARD_WIDTH; column++) {
-            const cells: Position[] = []
-
-            for (let row = 0; row < this.BOARD_HEIGHT; row++) {
-                cells.push(new Position(column, row))
-            }
-
-            this.areas.push({
+        const cell_groups = generate_zipf_board(this.BOARD_WIDTH, this.BOARD_HEIGHT)
+        this.areas = cell_groups.map((group) => {
+            return {
                 owning_player: 0,
-                cells: cells,
+                cells: group,
                 pie_size: 0,
                 slice_count: 0
-            })
-        }
+            }
+        })
 
         // Initialize pie sizes
         for (let index = 0; index < this.areas.length; index++) {
@@ -98,24 +71,10 @@ export class BammiBoardState {
     public get_adjacent_areas(area: Area): Area[] {
         const adjacent_area_set: Set<Area> = new Set()
 
-        const cells = area.cells
-            .flatMap((area_cell) =>
-                [ // Gather adjacent cells from area
-                    new Position(area_cell.column + 1, area_cell.row),
-                    new Position(area_cell.column - 1, area_cell.row),
-                    new Position(area_cell.column, area_cell.row + 1),
-                    new Position(area_cell.column, area_cell.row - 1)
-                ])
-            .filter((cell) => !area.cells.some((area_cell) => area_cell.equals(cell))) // Remove cells that are in the original area
-            .reduce<Position[]>((acc, val) => {
-                if (!acc.some((pos) => pos.equals(val))) {
-                    acc.push(val)
-                }
-                return acc
-            }, [])
+        const positions = get_area_adjacent_positions(area.cells)
 
-        cells.forEach((cell) => {
-            const found_area = this.get_area(cell.column, cell.row)
+        positions.forEach((position) => {
+            const found_area = this.get_area(position.column, position.row)
             if (found_area) {
                 adjacent_area_set.add(found_area[0])
             }
@@ -161,8 +120,8 @@ export class BammiGame {
     constructor(socket: WebSocket) {
         this._turn_order = [ 1, 2 ]
         this._turn_index = 0
-        this.board_state = new BammiBoardState(10, 10)
         this._socket = socket
+        this.board_state = new BammiBoardState(8, 8)
     }
 
     public get_active_player(): PlayerIndex {
