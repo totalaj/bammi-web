@@ -1,16 +1,23 @@
 use futures_util::{SinkExt, StreamExt};
 use log::*;
-use std::net::SocketAddr;
+use std::{
+    net::SocketAddr,
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::{
     accept_async,
-    tungstenite::{Error, Result},
+    tungstenite::{Error, Result, protocol::Message},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
-    if let Err(e) = handle_connection(peer, stream).await {
+use futures_channel::mpsc::{unbounded, UnboundedSender};
+
+async fn accept_connection(peer: SocketAddr, stream: TcpStream, context: Context) {
+    if let Err(e) = handle_connection(peer, stream, context).await {
         match e {
             Error::ConnectionClosed | Error::Protocol(_) | Error::Utf8 => (),
             err => error!("Error processing connection: {}", err),
@@ -25,7 +32,17 @@ struct MessageMove {
     player: i32,
 }
 
-async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
+type Tx = UnboundedSender<Message>;
+type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
+struct BammiMatch {
+    players: PeerMap,
+}
+
+struct Context {
+    matches: HashMap<String, BammiMatch>,
+}
+
+async fn handle_connection(peer: SocketAddr, stream: TcpStream, context: Context) -> Result<()> {
     let mut ws_stream = accept_async(stream).await.expect("Failed to accept");
 
     info!("New WebSocket connection: {}", peer);
@@ -44,8 +61,7 @@ async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
 			    let message_move: MessageMove = serde_json::from_value(message).unwrap();
 			    info!("{:?}", message_move);
 			},
-			&_ => {
-			}
+			&_ => {},
 		    }
 		}
 	    }
@@ -67,6 +83,6 @@ async fn main() {
         let peer = stream.peer_addr().expect("connected streams should have a peer address");
         info!("Peer address: {}", peer);
 
-        tokio::spawn(accept_connection(peer, stream));
+        tokio::spawn(accept_connection(peer, stream, context));
     }
 }

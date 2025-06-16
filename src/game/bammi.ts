@@ -14,13 +14,12 @@ import { generate_zipf_board } from "./board_generation"
  *   - Explosions can chain if connected dishes also become full.
  * - You win by claiming all areas.
  */
-
 /**
  * An index of 0 means no player
  */
 export type PlayerIndex = number
 
-type Area = {
+export type Area = {
     owning_player: PlayerIndex,
     cells: Position[],
     pie_size: number,
@@ -55,7 +54,7 @@ export class BammiBoardState {
         }
     }
 
-    public get_area(column: number, row: number): [area: Area, index: number] | undefined {
+    public get_area(column: number, row: number): [area?: Area, index?: number] {
         // We could precompute a mapping for col/row to area, if we want do do this more often
         const position = new Position(column, row)
         for (let index = 0; index < this.areas.length; index++) {
@@ -65,7 +64,7 @@ export class BammiBoardState {
             }
         }
 
-        return undefined
+        return [undefined, undefined]
     }
 
     public get_adjacent_areas(area: Area): Area[] {
@@ -75,7 +74,7 @@ export class BammiBoardState {
 
         positions.forEach((position) => {
             const found_area = this.get_area(position.column, position.row)
-            if (found_area) {
+            if (found_area[0]) {
                 adjacent_area_set.add(found_area[0])
             }
         })
@@ -165,7 +164,7 @@ export class BammiGame {
         }
 
         const area = this.board_state.get_area(column, row)
-        if (!area) {
+        if (!area[0] || !area[1]) {
             console.error("Area at column", column, "and row", row, "has no area to be found!")
             return
         }
