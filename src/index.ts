@@ -1,4 +1,4 @@
-import { Area, BammiBoardState, BammiGame } from "./game/bammi"
+import { Area, BammiBoardState, BammiGame, MessageConnect } from "./game/bammi"
 import { get_player_info } from "./game/player_info"
 import { Position } from "./math/position"
 
@@ -7,6 +7,14 @@ function main(): void {
     const socket = new WebSocket("ws://localhost:3000", "bammi")
 
     socket.onopen = (event: Event): void => {
+	const msg: MessageConnect = {
+            message_type: "connect",
+            player_id: "swag",
+	    room_id: "testing"
+        }
+	console.log(msg)
+        socket.send(JSON.stringify(msg))
+
     }
 
     socket.onmessage = (event: MessageEvent<any>): void => {

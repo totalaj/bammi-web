@@ -1,5 +1,5 @@
 import { get_area_adjacent_positions, Position } from "../math/position"
-import { generate_zipf_board } from "./board_generation"
+import { generate_checkerboard_board, generate_zipf_board } from "./board_generation"
 
 /**
  * The game of Bammi:
@@ -37,7 +37,7 @@ export class BammiBoardState {
         this.BOARD_WIDTH = board_width
         this.BOARD_HEIGHT = board_height
 
-        const cell_groups = generate_zipf_board(this.BOARD_WIDTH, this.BOARD_HEIGHT)
+        const cell_groups = generate_checkerboard_board(this.BOARD_WIDTH, this.BOARD_HEIGHT)
         this.areas = cell_groups.map((group) => {
             return {
                 owning_player: 0,
@@ -108,6 +108,12 @@ export interface MessageMove {
     message_type: string,
     area: number,
     player: PlayerIndex,
+}
+
+export interface MessageConnect {
+    message_type: string,
+    room_id: string,
+    player_id: string,
 }
 
 export class BammiGame {
