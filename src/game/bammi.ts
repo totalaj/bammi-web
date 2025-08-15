@@ -104,14 +104,24 @@ export class BammiBoardState {
     }
 }
 
+export enum MessageType {
+    Connect,
+    Move,
+    Count,
+}
+
+export interface MessageHeader {
+    messageType: MessageType,
+}
+
 export interface MessageMove {
-    message_type: string,
+    header: MessageHeader,
     area: number,
     player: PlayerIndex,
 }
 
 export interface MessageConnect {
-    message_type: string,
+    header: MessageHeader,
     room_id: string,
     player_id: string,
 }

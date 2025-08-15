@@ -1,28 +1,24 @@
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{StreamExt};
 use log::*;
 use std::{
-    net::SocketAddr,
     collections::HashMap,
+    net::SocketAddr,
     sync::{Arc, Mutex},
 };
 
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::{
     accept_async,
     tungstenite::{Error, Result, protocol::Message},
 };
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
-use futures_channel::mpsc::{unbounded, UnboundedSender};
+use futures_channel::mpsc::{UnboundedSender, unbounded};
 
-async fn accept_connection(peer: SocketAddr, stream: TcpStream, mut context: Context) {
-    if let Err(e) = handle_connection(peer, stream, &mut context).await {
-        match e {
-            Error::ConnectionClosed | Error::Protocol(_) | Error::Utf8 => (),
-            err => error!("Error processing connection: {}", err),
-        }
-    }
+async fn accept_connection(peer: SocketAddr, stream: TcpStream, mut context: Arc<Mutex<Context>>) {
+    let matches = &mut context.lock().unwrap().matches;
+    let handle = handle_connection(peer, stream, matches).await;
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -40,7 +36,7 @@ struct MessageConnect {
 }
 
 type Tx = UnboundedSender<Message>;
-type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
+type PeerMap = HashMap<SocketAddr, Tx>;
 
 #[derive(Clone)]
 struct BammiMatch {
@@ -52,7 +48,11 @@ struct Context {
     matches: HashMap<String, BammiMatch>,
 }
 
-async fn handle_connection(peer: SocketAddr, stream: TcpStream, context: &mut Context) -> Result<()> {
+async fn handle_connection(
+    peer: SocketAddr,
+    stream: TcpStream,
+    matches: &mut HashMap<String, BammiMatch>,
+) -> Result<()> {
     let mut ws_stream = accept_async(stream).await.expect("Failed to accept");
 
     info!("New WebSocket connection: {}", peer);
@@ -60,39 +60,43 @@ async fn handle_connection(peer: SocketAddr, stream: TcpStream, context: &mut Co
     while let Some(msg) = ws_stream.next().await {
         let msg = msg?;
 
-	//ADD PROPER ERROR HANDLING TO THIS
-        if msg.is_text() || msg.is_binary() {
-	    if let Ok(msg_string) = msg.into_text() {
-		if let Ok(message) = serde_json::from_str::<Value>(msg_string.as_str()) {
-		    let message_type: &str = message["message_type"].as_str().unwrap();
-		    info!("{:?}", message_type);
-		    match message_type {
-			"connect" => {
-			    let message_connect: MessageConnect = serde_json::from_value(message).unwrap();
-			    info!("{:?}", message_connect);
-
-			    if context.matches.get(&message_connect.room_id).is_none() {
-				context.matches.insert(message_connect.room_id.clone(), BammiMatch{players: PeerMap::new(Mutex::new(HashMap::new()))});
-				info!("Starting Match: {}", message_connect.room_id);
-			    }
-			    if let Some(bammi_match) = context.matches.get(&message_connect.room_id) {
-				let (tx, rx) = unbounded();
-				let mut players = bammi_match.players.lock().unwrap();
-				players.insert(peer, tx);
-				for player in players.iter() {
-				    info!("player: {:?}", player);
-				}
-			    }
-			},
-			"move" => {
-			    let message_move: MessageMove = serde_json::from_value(message).unwrap();
-			    info!("{:?}", message_move);
-			},
-			&_ => {},
-		    }
-		}
-	    }
+        //ADD PROPER ERROR HANDLING TO THIS
+        if !msg.is_text() && !msg.is_binary() {
+            return Ok(());
         }
+
+        let msg_string = msg.into_text().unwrap_or_default();
+        let msg_json = serde_json::from_str::<Value>(msg_string.as_str()).unwrap_or_default();
+        let message_type: &str = msg_json["message_type"].as_str().unwrap_or_default();
+        info!("{:?}", message_type);
+        match message_type {
+            "connect" => {
+                let message_connect: MessageConnect = serde_json::from_value(msg_json).unwrap();
+                info!("{:?}", message_connect);
+
+                if matches.get(&message_connect.room_id).is_none() {
+                    matches.insert(
+                        message_connect.room_id.clone(),
+                        BammiMatch {
+                            players: PeerMap::new(),
+                        },
+                    );
+                    info!("Starting Match: {}", message_connect.room_id);
+                }
+                if let Some(&mut bammi_match) = matches.get_mut(&message_connect.room_id) {
+                    let (tx, rx) = unbounded();
+                    bammi_match.players.insert(peer, tx);
+                    for player in bammi_match.players.iter() {
+                        info!("player: {:?}", player);
+                    }
+                }
+            }
+            "move" => {
+                let message_move: MessageMove = serde_json::from_value(msg_json).unwrap();
+                info!("{:?}", message_move);
+            }
+            &_ => {}
+        };
     }
     info!("Disconnected: {}", peer);
 
@@ -106,17 +110,16 @@ async fn main() {
     let addr = "127.0.0.1:3000";
     let listener = TcpListener::bind(&addr).await.expect("Can't listen");
     info!("Listening on: {}", addr);
-    let context = Context {
-	matches: HashMap::new(),
-    };
+    let context: Arc<Mutex<Context>> = Arc::new(Mutex::new(Context {
+        matches: HashMap::new(),
+    }));
 
     while let Ok((stream, _)) = listener.accept().await {
-        let peer = stream.peer_addr().expect("connected streams should have a peer address");
+        let peer = stream
+            .peer_addr()
+            .expect("connected streams should have a peer address");
         info!("Peer address: {}", peer);
 
-        tokio::spawn(accept_connection(peer, stream, context.clone())); //not sure how I feel about this clone, need to think about it
-	//just as expected, it creates a copy of the context, so we can't access the player list, because it's per player,
-	//need to figure out how to do a mutable reference, probably some kind of arc mutex is correct here, because
-	//we only need to lock it when we insert data
+        tokio::spawn(accept_connection(peer, stream, context.clone()));
     }
 }
