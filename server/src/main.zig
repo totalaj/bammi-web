@@ -33,7 +33,7 @@ pub fn main() !void {
         },
     });
 
-    var app = App{};
+    var app = App{.allocator = allocator};
 
     try ws_server.listen(&app);
 }
@@ -51,12 +51,17 @@ const Handler = struct {
     }
 
     pub fn clientMessage(self: *Handler, data: []const u8) !void {
-        std.json.ParseError
+        const tree = try std.json.parseFromSlice(std.json.Value, self.app.allocator, data, .{});
+        defer tree.deinit();
+
+        const obj_type = tree.value.object.get("message_type").?;
+        std.debug.print("json type: {} \n", .{obj_type.integer});
         //try self.conn.write(data);
     }
 };
 
 const App = struct {
+    allocator: std.mem.Allocator,
     //maybe a db pool
     //maybe a list of rooms
 };

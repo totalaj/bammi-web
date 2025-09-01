@@ -1,4 +1,4 @@
-import { Area, BammiBoardState, BammiGame, MessageConnect } from "./game/bammi"
+import { Area, BammiBoardState, BammiGame, MessageType, MessageConnect } from "./game/bammi"
 import { get_player_info } from "./game/player_info"
 import { Position } from "./math/position"
 
@@ -8,9 +8,7 @@ function main(): void {
 
     socket.onopen = (event: Event): void => {
         const msg: MessageConnect = {
-            header: {
-                messageType: MessageType.connect,
-            }
+            message_type: MessageType.Connect,
             player_id: "swag",
             room_id: "testing"
         }

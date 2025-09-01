@@ -110,18 +110,14 @@ export enum MessageType {
     Count,
 }
 
-export interface MessageHeader {
-    messageType: MessageType,
-}
-
 export interface MessageMove {
-    header: MessageHeader,
+    message_type: MessageType,
     area: number,
     player: PlayerIndex,
 }
 
 export interface MessageConnect {
-    header: MessageHeader,
+    message_type: MessageType,
     room_id: string,
     player_id: string,
 }
@@ -192,7 +188,7 @@ export class BammiGame {
         }
 
         const msg: MessageMove = {
-            message_type: "move",
+            message_type: MessageType.Move,
             area: area[1],
             player: player
         }
