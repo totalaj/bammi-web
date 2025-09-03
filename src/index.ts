@@ -10,7 +10,7 @@ function main(): void {
         const msg: MessageConnect = {
             message_type: MessageType.Connect,
             player_id: "swag",
-            room_id: "testing"
+            room_id: "hella"
         }
         console.log(msg)
         socket.send(JSON.stringify(msg))

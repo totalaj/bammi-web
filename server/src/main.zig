@@ -5,6 +5,7 @@ const Message = enum {
     Connect,
     Move,
 };
+
 const MessageConnect = struct {
     message_type: Message = .Connect,
     room_id: []const u8,
@@ -33,7 +34,7 @@ pub fn main() !void {
         },
     });
 
-    var app = App{.allocator = allocator};
+    var app = App{ .allocator = allocator, .rooms = .empty };
 
     try ws_server.listen(&app);
 }
@@ -50,18 +51,46 @@ const Handler = struct {
         };
     }
 
-    pub fn clientMessage(self: *Handler, data: []const u8) !void {
-        const tree = try std.json.parseFromSlice(std.json.Value, self.app.allocator, data, .{});
+    pub fn clientMessage(self: *Handler, allocator: std.mem.Allocator, data: []const u8) !void {
+        std.debug.print("data: {s}\n", .{data});
+        const tree = try std.json.parseFromSlice(std.json.Value, allocator, data, .{});
         defer tree.deinit();
 
         const obj_type = tree.value.object.get("message_type").?;
-        std.debug.print("json type: {} \n", .{obj_type.integer});
+        const msg_type: Message = @enumFromInt(obj_type.integer);
+        std.debug.print("json type: {}\n", .{msg_type});
+        switch (msg_type) {
+            .Connect => {
+                const message_unwrapped = try std.json.parseFromValue(MessageConnect, allocator, tree.value, .{});
+                defer message_unwrapped.deinit();
+                const message = message_unwrapped.value;
+                std.debug.print("connect!: {}\n", .{message});
+                const room = try self.app.rooms.getOrPut(self.app.allocator, message.room_id);
+                room.value_ptr.players = .empty;
+                try room.value_ptr.players.append(self.app.allocator, .{
+                    .id = message.player_id,
+                });
+            },
+            .Move => {
+                const message = try std.json.parseFromValue(MessageMove, allocator, tree.value, .{});
+                std.debug.print("Move!: {}\n", .{message.value});
+            },
+        }
         //try self.conn.write(data);
     }
 };
 
 const App = struct {
     allocator: std.mem.Allocator,
-    //maybe a db pool
-    //maybe a list of rooms
+    //rooms: std.AutoHashMapUnmanaged(i32, Room),
+    rooms: std.StringHashMapUnmanaged(Room),
+};
+
+const Player = struct {
+    id: []const u8,
+};
+
+const Room = struct {
+    id: []const u8,
+    players: std.ArrayList(Player),
 };
