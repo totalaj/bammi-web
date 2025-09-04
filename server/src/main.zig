@@ -15,7 +15,7 @@ const MessageConnect = struct {
 const MessageMove = struct {
     message_type: Message = .Move,
     area: i32,
-    player: i32,
+    player: []const u8,
 };
 
 pub fn main() !void {
@@ -34,7 +34,11 @@ pub fn main() !void {
         },
     });
 
-    var app = App{ .allocator = allocator, .rooms = .empty };
+    var app = App{
+        .allocator = allocator,
+        .rooms = .empty,
+        .players = .empty,
+    };
 
     try ws_server.listen(&app);
 }
@@ -51,6 +55,14 @@ const Handler = struct {
         };
     }
 
+    fn parseMessage(T: type, value: *const std.json.Value, allocator: std.mem.Allocator) !T {
+        const message_unwrapped = try std.json.parseFromValue(T, allocator, value.*, .{});
+        defer message_unwrapped.deinit();
+        const message = message_unwrapped.value;
+        std.debug.print("parsed message: {}\n", .{message});
+        return message;
+    }
+
     pub fn clientMessage(self: *Handler, allocator: std.mem.Allocator, data: []const u8) !void {
         std.debug.print("data: {s}\n", .{data});
         const tree = try std.json.parseFromSlice(std.json.Value, allocator, data, .{});
@@ -59,21 +71,35 @@ const Handler = struct {
         const obj_type = tree.value.object.get("message_type").?;
         const msg_type: Message = @enumFromInt(obj_type.integer);
         std.debug.print("json type: {}\n", .{msg_type});
+
         switch (msg_type) {
             .Connect => {
-                const message_unwrapped = try std.json.parseFromValue(MessageConnect, allocator, tree.value, .{});
-                defer message_unwrapped.deinit();
-                const message = message_unwrapped.value;
-                std.debug.print("connect!: {}\n", .{message});
+                const message = try parseMessage(MessageConnect, &tree.value, allocator);
+
+                const player = try self.app.players.getOrPut(self.app.allocator, message.player_id);
+                if (!player.found_existing) {
+                    player.value_ptr.* = .{
+                        .id = .{ .val = message.player_id },
+                        .room_id = .{ .val = message.room_id },
+                        .conn = self.conn,
+                    };
+                }
+
                 const room = try self.app.rooms.getOrPut(self.app.allocator, message.room_id);
-                room.value_ptr.players = .empty;
-                try room.value_ptr.players.append(self.app.allocator, .{
-                    .id = message.player_id,
-                });
+                if (!room.found_existing) {
+                    room.value_ptr.players = .empty;
+                    try room.value_ptr.players.append(self.app.allocator, .{
+                        .val = message.player_id,
+                    });
+                }
             },
             .Move => {
-                const message = try std.json.parseFromValue(MessageMove, allocator, tree.value, .{});
-                std.debug.print("Move!: {}\n", .{message.value});
+                const message = try parseMessage(MessageMove, &tree.value, allocator);
+                for(self.app.rooms.get(message.player).?.players.items) |player_id| {
+                    const player = self.app.players.get(player_id.val);
+                    try player.?.conn.write(data);
+                }
+                std.debug.print("Move parsed: {}\n", .{message});
             },
         }
         //try self.conn.write(data);
@@ -82,15 +108,25 @@ const Handler = struct {
 
 const App = struct {
     allocator: std.mem.Allocator,
-    //rooms: std.AutoHashMapUnmanaged(i32, Room),
     rooms: std.StringHashMapUnmanaged(Room),
+    players: std.StringHashMapUnmanaged(Player),
+};
+
+const PlayerID = struct {
+    val: []const u8,
+};
+
+const RoomID = struct {
+    val: []const u8,
 };
 
 const Player = struct {
-    id: []const u8,
+    id: PlayerID,
+    room_id: RoomID,
+    conn: *ws.Conn,
 };
 
 const Room = struct {
-    id: []const u8,
-    players: std.ArrayList(Player),
+    id: RoomID,
+    players: std.ArrayList(PlayerID),
 };
