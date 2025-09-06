@@ -1,3 +1,0 @@
-Just make it work with one room.
-don't worry about infinite rooms.
-we make the matchmaking later.
