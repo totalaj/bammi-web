@@ -1,24 +1,27 @@
-import { BammiGame } from "./game/bammi"
+import { Area, BammiBoardState, BammiGame, MessageType, MessageConnect } from "./game/bammi"
 import { get_player_info } from "./game/player_info"
 import { Position } from "./math/position"
 
 
 function main(): void {
-    const web_socket = new WebSocket("ws://localhost:3000", "bammi")
+    const socket = new WebSocket("ws://localhost:3000", "bammi")
 
-    web_socket.onopen = (event: Event): void => {
-        const msg = {
-            message_type: "move",
-            move_cell: 3
+    socket.onopen = (event: Event): void => {
+        const msg: MessageConnect = {
+            message_type: MessageType.Connect,
+            player_id: "swag",
+            room_id: "hella"
         }
-        web_socket.send(JSON.stringify(msg))
+        console.log(msg)
+        socket.send(JSON.stringify(msg))
+
     }
 
-    web_socket.onmessage = (event: MessageEvent<any>): void => {
+    socket.onmessage = (event: MessageEvent<any>): void => {
         console.log("message: " + event.data)
     }
 
-    const bammi_game = new BammiGame()
+    const bammi_game = new BammiGame(socket)
 
     const grid = document.body.appendChild(document.createElement('div'))
     grid.id = 'game-grid'
@@ -76,16 +79,33 @@ function main(): void {
                 const left_adjacent = new Position(cell.column - 1, cell.row)
                 const right_adjacent = new Position(cell.column + 1, cell.row)
 
-                if (state.get_area(top_adjacent.column, top_adjacent.row) !== area) {
+                const top_area: Area | undefined = state.get_area(top_adjacent.column, top_adjacent.row)
+                if (top_area == undefined) {
+                    return
+                }
+                const bottom_area: Area | undefined = state.get_area(bottom_adjacent.column, bottom_adjacent.row)
+                if (bottom_area == undefined) {
+                    return
+                }
+                const left_area: Area | undefined = state.get_area(left_adjacent.column, left_adjacent.row)
+                if (left_area == undefined) {
+                    return
+                }
+                const right_area: Area | undefined = state.get_area(right_adjacent.column, right_adjacent.row)
+                if (right_area == undefined) {
+                    return
+                }
+
+                if (top_area !== area) {
                     cell_element.style.borderTopColor = 'black'
                 }
-                if (state.get_area(bottom_adjacent.column, bottom_adjacent.row) !== area) {
+                if (bottom_area !== area) {
                     cell_element.style.borderBottomColor = 'black'
                 }
-                if (state.get_area(left_adjacent.column, left_adjacent.row) !== area) {
+                if (left_area !== area) {
                     cell_element.style.borderLeftColor = 'black'
                 }
-                if (state.get_area(right_adjacent.column, right_adjacent.row) !== area) {
+                if (right_area !== area) {
                     cell_element.style.borderRightColor = 'black'
                 }
             })

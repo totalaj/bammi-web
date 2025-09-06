@@ -1,5 +1,5 @@
 import { get_area_adjacent_positions, Position } from "../math/position"
-import { generate_zipf_board } from "./board_generation"
+import { generate_checkerboard_board, generate_zipf_board } from "./board_generation"
 
 /**
  * The game of Bammi:
@@ -14,17 +14,17 @@ import { generate_zipf_board } from "./board_generation"
  *   - Explosions can chain if connected dishes also become full.
  * - You win by claiming all areas.
  */
-
 /**
  * An index of 0 means no player
  */
 export type PlayerIndex = number
 
-type Area = {
+export type Area = {
     owning_player: PlayerIndex,
     cells: Position[],
     pie_size: number,
-    slice_count: number
+    slice_count: number,
+    index: number,
 }
 
 export class BammiBoardState {
@@ -38,19 +38,21 @@ export class BammiBoardState {
         this.BOARD_WIDTH = board_width
         this.BOARD_HEIGHT = board_height
 
-        const cell_groups = generate_zipf_board(this.BOARD_WIDTH, this.BOARD_HEIGHT)
+        const cell_groups = generate_checkerboard_board(this.BOARD_WIDTH, this.BOARD_HEIGHT)
         this.areas = cell_groups.map((group) => {
             return {
                 owning_player: 0,
                 cells: group,
                 pie_size: 0,
-                slice_count: 0
+                slice_count: 0,
+                index: 0,
             }
         })
 
         // Initialize pie sizes
         for (let index = 0; index < this.areas.length; index++) {
             const area = this.areas[index]
+            area.index = index
             area.pie_size = this.get_adjacent_areas(area).length
         }
     }
@@ -64,7 +66,6 @@ export class BammiBoardState {
                 return area
             }
         }
-
         return undefined
     }
 
@@ -105,14 +106,34 @@ export class BammiBoardState {
     }
 }
 
+export enum MessageType {
+    Connect,
+    Move,
+    Count,
+}
+
+export interface MessageMove {
+    message_type: MessageType,
+    area: number,
+    player: PlayerIndex,
+}
+
+export interface MessageConnect {
+    message_type: MessageType,
+    room_id: string,
+    player_id: string,
+}
+
 export class BammiGame {
     public board_state: BammiBoardState
     private _turn_order: PlayerIndex[]
     private _turn_index: number
+    private _socket: WebSocket
 
-    constructor() {
+    constructor(socket: WebSocket) {
         this._turn_order = [ 1, 2 ]
         this._turn_index = 0
+        this._socket = socket
         this.board_state = new BammiBoardState(8, 8)
     }
 
@@ -120,32 +141,18 @@ export class BammiGame {
         return this._turn_order[this._turn_index]
     }
 
-    public submit_move(column: number, row: number, player: PlayerIndex): void {
-        if (this.board_state.get_win_state() !== undefined) {
-            console.log("We already have a winner, you can't play any more")
-            return
-        }
-
-        const area = this.board_state.get_area(column, row)
-        if (!area) {
-            console.error("Area at column", column, "and row", row, "has no area to be found!")
-            return
-        }
-
-        if (area.owning_player !== 0 && area.owning_player !== player) {
-            console.warn("Player", player, "cannot add to area at column", column, "and row", row)
-            return
-        }
-
+    public receive_move(msg: MessageMove): void {
         // Increment player pointer
         this._turn_index = (this._turn_index + 1) % this._turn_order.length
+
+        const area = this.board_state.areas[msg.area]
 
         let areas_to_add_to = [ area ]
 
         while (areas_to_add_to.length > 0) {
             const top_area = areas_to_add_to[0]
             areas_to_add_to = areas_to_add_to.slice(1) // Remove the first element
-            top_area.owning_player = player
+            top_area.owning_player = msg.player
 
             if (top_area.slice_count >= top_area.pie_size) {
                 // Explosion
@@ -162,6 +169,35 @@ export class BammiGame {
                 return
             }
         }
+    }
+
+    public submit_move(column: number, row: number, player: PlayerIndex): void {
+        if (this.board_state.get_win_state() !== undefined) {
+            console.log("We already have a winner, you can't play any more")
+            return
+        }
+
+        const area = this.board_state.get_area(column, row)
+        if (!area) {
+            console.error("Area at column", column, "and row", row, "has no area to be found!")
+            return
+        }
+        else {
+            if (area.owning_player !== 0 && area.owning_player !== player) {
+                console.warn("Player", player, "cannot add to area at column", column, "and row", row)
+                return
+            }
+        }
+
+        const msg: MessageMove = {
+            message_type: MessageType.Move,
+            area: area.index,
+            player: player
+        }
+	console.log(msg)
+        this._socket.send(JSON.stringify(msg))
+
+        this.receive_move(msg)
     }
 }
 
