@@ -44,11 +44,12 @@ export class BammiBoardState {
                 owning_player: 0,
                 cells: group,
                 pie_size: 0,
-                slice_count: 0
+                slice_count: 0,
+                index: 0,
             }
         })
 
-        // Initialize pie sizes and area indexes
+        // Initialize pie sizes
         for (let index = 0; index < this.areas.length; index++) {
             const area = this.areas[index]
             area.index = index
@@ -56,7 +57,7 @@ export class BammiBoardState {
         }
     }
 
-    public get_area(column: number, row: number): area?: Area {
+    public get_area(column: number, row: number): Area | undefined {
         // We could precompute a mapping for col/row to area, if we want do do this more often
         const position = new Position(column, row)
         for (let index = 0; index < this.areas.length; index++) {
@@ -65,7 +66,7 @@ export class BammiBoardState {
                 return area
             }
         }
-        return null
+        return undefined
     }
 
     public get_adjacent_areas(area: Area): Area[] {
@@ -87,7 +88,7 @@ export class BammiBoardState {
         return adjacent_areas
     }
 
-    public get_win_state(): PlayerIndex | null {
+    public get_win_state(): PlayerIndex | undefined {
         let player_index: PlayerIndex | undefined = undefined
 
         for (let index = 0; index < this.areas.length; index++) {
@@ -97,7 +98,7 @@ export class BammiBoardState {
             }
 
             if (area.owning_player !== player_index) {
-                return null
+                return undefined
             }
         }
 
@@ -163,7 +164,7 @@ export class BammiGame {
 
             const winner = this.board_state.get_win_state()
 
-            if (winner !== null) {
+            if (winner !== undefined) {
                 console.log("We have a winner! Player with index", winner)
                 return
             }
