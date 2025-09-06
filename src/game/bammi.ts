@@ -23,7 +23,8 @@ export type Area = {
     owning_player: PlayerIndex,
     cells: Position[],
     pie_size: number,
-    slice_count: number
+    slice_count: number,
+    index: number,
 }
 
 export class BammiBoardState {
@@ -47,24 +48,24 @@ export class BammiBoardState {
             }
         })
 
-        // Initialize pie sizes
+        // Initialize pie sizes and area indexes
         for (let index = 0; index < this.areas.length; index++) {
             const area = this.areas[index]
+            area.index = index
             area.pie_size = this.get_adjacent_areas(area).length
         }
     }
 
-    public get_area(column: number, row: number): [area?: Area, index?: number] {
+    public get_area(column: number, row: number): area?: Area {
         // We could precompute a mapping for col/row to area, if we want do do this more often
         const position = new Position(column, row)
         for (let index = 0; index < this.areas.length; index++) {
             const area = this.areas[index]
             if (area.cells.some((cell) => cell.equals(position))) {
-                return [ area, index ]
+                return area
             }
         }
-
-        return [undefined, undefined]
+        return null
     }
 
     public get_adjacent_areas(area: Area): Area[] {
@@ -74,8 +75,8 @@ export class BammiBoardState {
 
         positions.forEach((position) => {
             const found_area = this.get_area(position.column, position.row)
-            if (found_area[0]) {
-                adjacent_area_set.add(found_area[0])
+            if (found_area) {
+                adjacent_area_set.add(found_area)
             }
         })
 
@@ -86,7 +87,7 @@ export class BammiBoardState {
         return adjacent_areas
     }
 
-    public get_win_state(): PlayerIndex | undefined {
+    public get_win_state(): PlayerIndex | null {
         let player_index: PlayerIndex | undefined = undefined
 
         for (let index = 0; index < this.areas.length; index++) {
@@ -96,7 +97,7 @@ export class BammiBoardState {
             }
 
             if (area.owning_player !== player_index) {
-                return undefined
+                return null
             }
         }
 
@@ -162,7 +163,7 @@ export class BammiGame {
 
             const winner = this.board_state.get_win_state()
 
-            if (winner !== undefined) {
+            if (winner !== null) {
                 console.log("We have a winner! Player with index", winner)
                 return
             }
@@ -176,12 +177,12 @@ export class BammiGame {
         }
 
         const area = this.board_state.get_area(column, row)
-        if (!area[0] || !area[1]) {
+        if (!area) {
             console.error("Area at column", column, "and row", row, "has no area to be found!")
             return
         }
         else {
-            if (area[0].owning_player !== 0 && area[0].owning_player !== player) {
+            if (area.owning_player !== 0 && area.owning_player !== player) {
                 console.warn("Player", player, "cannot add to area at column", column, "and row", row)
                 return
             }
@@ -189,7 +190,7 @@ export class BammiGame {
 
         const msg: MessageMove = {
             message_type: MessageType.Move,
-            area: area[1],
+            area: area.index,
             player: player
         }
 	console.log(msg)

@@ -79,19 +79,19 @@ function main(): void {
                 const left_adjacent = new Position(cell.column - 1, cell.row)
                 const right_adjacent = new Position(cell.column + 1, cell.row)
 
-                const top_area: Area | undefined = state.get_area(top_adjacent.column, top_adjacent.row)[0]
+                const top_area: Area | undefined = state.get_area(top_adjacent.column, top_adjacent.row)
                 if (top_area == null || top_area == undefined) {
                     return
                 }
-                const bottom_area: Area | undefined = state.get_area(bottom_adjacent.column, bottom_adjacent.row)[0]
+                const bottom_area: Area | undefined = state.get_area(bottom_adjacent.column, bottom_adjacent.row)
                 if (bottom_area == null || bottom_area == undefined) {
                     return
                 }
-                const left_area: Area | undefined = state.get_area(left_adjacent.column, left_adjacent.row)[0]
+                const left_area: Area | undefined = state.get_area(left_adjacent.column, left_adjacent.row)
                 if (left_area == null || left_area == undefined) {
                     return
                 }
-                const right_area: Area | undefined = state.get_area(right_adjacent.column, right_adjacent.row)[0]
+                const right_area: Area | undefined = state.get_area(right_adjacent.column, right_adjacent.row)
                 if (right_area == null || right_area == undefined) {
                     return
                 }
